@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import roomescape.exception.DuplicateException;
 import roomescape.exception.NotFoundException;
 import roomescape.member.domain.Member;
+import roomescape.member.repository.MemberRepository;
 import roomescape.reservation.domain.Reservation;
 import roomescape.reservation.repository.ReservationRepository;
 import roomescape.reservationtime.domain.ReservationTime;
@@ -23,13 +24,16 @@ public class ReservationService {
     private final ReservationRepository reservationRepository;
     private final ReservationTimeRepository reservationTimeRepository;
     private final ThemeRepository themeRepository;
+    private final MemberRepository memberRepository;
 
     public ReservationService(ReservationRepository reservationRepository,
                               ReservationTimeRepository reservationTimeRepository,
-                              ThemeRepository themeRepository) {
+                              ThemeRepository themeRepository,
+                              MemberRepository memberRepository) {
         this.reservationRepository = reservationRepository;
         this.reservationTimeRepository = reservationTimeRepository;
         this.themeRepository = themeRepository;
+        this.memberRepository = memberRepository;
     }
 
     public List<Reservation> findAll() {
@@ -60,6 +64,14 @@ public class ReservationService {
         } catch (DuplicateKeyException e) {
             throw new DuplicateException("해당 날짜와 시간은 이미 예약되어 있습니다.");
         }
+    }
+
+    @Transactional
+    public Reservation save(Long memberId, LocalDate date, long timeId, long themeId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new NotFoundException("해당 회원을 찾을 수 없습니다. id: " + memberId));
+
+        return save(member, date, timeId, themeId);
     }
 
     @Transactional

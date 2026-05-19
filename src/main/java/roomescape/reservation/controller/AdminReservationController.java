@@ -6,7 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import roomescape.reservation.domain.Reservation;
-import roomescape.reservation.dto.ReservationRequest;
+import roomescape.reservation.dto.AdminReservationRequest;
 import roomescape.reservation.dto.ReservationResponse;
 import roomescape.reservation.service.ReservationService;
 
@@ -31,12 +31,12 @@ public class AdminReservationController {
 
     @PostMapping
     public ResponseEntity<ReservationResponse> createForceReservation(
-            @Valid @RequestBody ReservationRequest reservationRequest) {
+            @Valid @RequestBody AdminReservationRequest adminReservationRequest) {
         Reservation reservation = reservationService.save(
-                reservationRequest.name(),
-                reservationRequest.date(),
-                reservationRequest.timeId(),
-                reservationRequest.themeId()
+                adminReservationRequest.memberId(),
+                adminReservationRequest.date(),
+                adminReservationRequest.timeId(),
+                adminReservationRequest.themeId()
         );
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ReservationResponse.from(reservation));
