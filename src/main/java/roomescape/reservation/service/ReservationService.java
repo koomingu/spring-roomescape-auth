@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import roomescape.exception.DuplicateException;
 import roomescape.exception.NotFoundException;
+import roomescape.member.domain.Member;
 import roomescape.reservation.domain.Reservation;
 import roomescape.reservation.repository.ReservationRepository;
 import roomescape.reservationtime.domain.ReservationTime;
@@ -40,12 +41,12 @@ public class ReservationService {
                 .orElseThrow(() -> new NotFoundException("해당 예약을 찾을 수 없습니다. id: " + id));
     }
 
-    public List<Reservation> findAllByName(String name) {
-        return reservationRepository.findAllByName(name);
+    public List<Reservation> findAllByMemberId(Long memberId) {
+        return reservationRepository.findAllByMemberId(memberId);
     }
 
     @Transactional
-    public Reservation save(String name, LocalDate date, long timeId, long themeId) {
+    public Reservation save(Member member, LocalDate date, long timeId, long themeId) {
         ReservationTime time = reservationTimeRepository.findById(timeId)
                 .orElseThrow(() -> new NotFoundException("예약 시간을 찾을 수 없습니다."));
 
@@ -55,17 +56,17 @@ public class ReservationService {
         validateDuplicateReservation(date, timeId, themeId);
 
         try {
-            return reservationRepository.save(new Reservation(name, date, time, theme));
+            return reservationRepository.save(new Reservation(member, date, time, theme));
         } catch (DuplicateKeyException e) {
             throw new DuplicateException("해당 날짜와 시간은 이미 예약되어 있습니다.");
         }
     }
 
     @Transactional
-    public Reservation updateReservationDateTimeByUser(long id, String name, LocalDate date, long timeId) {
+    public Reservation updateReservationDateTimeByUser(long id, Long memberId, LocalDate date, long timeId) {
         Reservation reservation = findById(id);
 
-        reservation.validateOwner(name);
+        reservation.validateOwner(memberId);
 
         ReservationTime time = reservationTimeRepository.findById(timeId)
                 .orElseThrow(() -> new NotFoundException("예약 시간을 찾을 수 없습니다."));
@@ -74,19 +75,19 @@ public class ReservationService {
 
         validateDuplicateReservation(date, timeId, reservation.getTheme().id());
 
-        reservationRepository.updateDateTime(reservation.getId(), name, date, timeId);
+        reservationRepository.updateDateTime(reservation.getId(), memberId, date, timeId);
         return findById(id);
     }
 
     @Transactional
-    public void deleteByUser(long id, String userName) {
+    public void deleteByUser(long id, Long memberId) {
         Optional<Reservation> optionalReservation = reservationRepository.findById(id);
         if (optionalReservation.isEmpty()) {
             return;
         }
 
         Reservation reservation = optionalReservation.get();
-        reservation.validateOwner(userName);
+        reservation.validateOwner(memberId);
         reservation.validateDeletable();
         reservationRepository.delete(reservation.getId());
     }

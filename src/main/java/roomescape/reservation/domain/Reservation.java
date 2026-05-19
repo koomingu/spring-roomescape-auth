@@ -3,6 +3,7 @@ package roomescape.reservation.domain;
 import java.time.LocalTime;
 import roomescape.exception.BadRequestException;
 import roomescape.exception.ForbiddenActionException;
+import roomescape.member.domain.Member;
 import roomescape.reservationtime.domain.ReservationTime;
 import roomescape.theme.domain.Theme;
 
@@ -10,22 +11,20 @@ import java.time.LocalDate;
 
 public class Reservation {
     private final Long id;
-    private final String name;
+    private Member member;
     private final LocalDate date;
     private final ReservationTime time;
     private final Theme theme;
 
-    public Reservation(String name, LocalDate date, ReservationTime time, Theme theme) {
-        this(null, name, date, time, theme);
+    public Reservation(Member member, LocalDate date, ReservationTime time, Theme theme) {
+        this(null, member, date, time, theme);
     }
 
-    public Reservation(Long id, String name, LocalDate date, ReservationTime time, Theme theme) {
-        validateNotNull(name, date, time, theme);
-        validateNameNotBlank(name);
+    public Reservation(Long id, Member member, LocalDate date, ReservationTime time, Theme theme) {
         validateReservationDateTime(date, time.startAt());
 
         this.id = id;
-        this.name = name;
+        this.member = member;
         this.date = date;
         this.time = time;
         this.theme = theme;
@@ -38,9 +37,9 @@ public class Reservation {
         validateReservationDateTime(newDate, newTime);
     }
 
-    public void validateOwner(String userName) {
-        if (!this.name.equals(userName)) {
-            throw new ForbiddenActionException("예약자 이름이 일치하지 않습니다.");
+    public void validateOwner(Long memberId) {
+        if (!this.member.getId().equals(memberId)) {
+            throw new ForbiddenActionException("본인의 예약만 제어할 수 있습니다.");
         }
     }
 
@@ -50,18 +49,6 @@ public class Reservation {
 
         if (date.isBefore(today) || (date.equals(today) && time.startAt().isBefore(now))) {
             throw new BadRequestException("지난 예약은 삭제할 수 없습니다.");
-        }
-    }
-
-    private void validateNotNull(String name, LocalDate date, ReservationTime time, Theme theme) {
-        if (name == null || date == null || time == null || theme == null) {
-            throw new BadRequestException("예약의 필수 정보(이름, 날짜, 시간, 테마)는 누락될 수 없습니다.");
-        }
-    }
-
-    private void validateNameNotBlank(String name) {
-        if (name.isBlank()) {
-            throw new BadRequestException("예약자 이름은 비어있거나 공백일 수 없습니다.");
         }
     }
 
@@ -80,8 +67,8 @@ public class Reservation {
         return id;
     }
 
-    public String getName() {
-        return name;
+    public Member getMember() {
+        return member;
     }
 
     public LocalDate getDate() {

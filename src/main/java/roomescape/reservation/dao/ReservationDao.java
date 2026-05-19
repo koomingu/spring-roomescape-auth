@@ -6,6 +6,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
+import roomescape.member.domain.Member;
 import roomescape.reservation.domain.Reservation;
 import roomescape.reservationtime.domain.ReservationTime;
 import roomescape.theme.domain.Theme;
@@ -19,14 +20,35 @@ import java.util.Objects;
 @Repository
 public class ReservationDao {
     private final JdbcTemplate jdbcTemplate;
-    private final RowMapper<Reservation> rowMapper = (rs, rowNum) -> new Reservation(
-            rs.getLong("reservation_id"),
-            rs.getString("name"),
-            rs.getObject("date", LocalDate.class),
-            new ReservationTime(rs.getLong("time_id"), rs.getObject("time_value", LocalTime.class)),
-            new Theme(rs.getLong("theme_id"), rs.getString("theme_name"), rs.getString("theme_description"),
-                    rs.getString("theme_thumbnail"))
-    );
+
+    private final RowMapper<Reservation> rowMapper = (rs, rowNum) -> {
+        Member member = new Member(
+                rs.getLong("member_id"),
+                rs.getString("member_email"),
+                rs.getString("member_password"),
+                rs.getString("member_name")
+        );
+
+        ReservationTime time = new ReservationTime(
+                rs.getLong("time_id"),
+                rs.getObject("time_value", LocalTime.class)
+        );
+
+        Theme theme = new Theme(
+                rs.getLong("theme_id"),
+                rs.getString("theme_name"),
+                rs.getString("theme_description"),
+                rs.getString("theme_thumbnail")
+        );
+
+        return new Reservation(
+                rs.getLong("reservation_id"),
+                member,
+                rs.getObject("date", LocalDate.class),
+                time,
+                theme
+        );
+    };
 
     public ReservationDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -34,7 +56,7 @@ public class ReservationDao {
 
     public Reservation save(Reservation reservation) {
         String sql = """
-                INSERT INTO reservation (name, date, time_id, theme_id)
+                INSERT INTO reservation (member_id, date, time_id, theme_id)
                 VALUES (?, ?, ?, ?)
                 """;
 
@@ -42,7 +64,7 @@ public class ReservationDao {
 
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, new String[]{"id"});
-            ps.setString(1, reservation.getName());
+            ps.setLong(1, reservation.getMember().getId());
             ps.setObject(2, reservation.getDate());
             ps.setLong(3, reservation.getTime().id());
             ps.setLong(4, reservation.getTheme().id());
@@ -51,16 +73,19 @@ public class ReservationDao {
 
         long generatedId = Objects.requireNonNull(keyHolder.getKey()).longValue();
 
-        return new Reservation(generatedId, reservation.getName(), reservation.getDate(), reservation.getTime(), reservation.getTheme());
+        return new Reservation(generatedId, reservation.getMember(), reservation.getDate(), reservation.getTime(),
+                reservation.getTheme());
     }
 
     public List<Reservation> findAll() {
         String sql = """
-                SELECT r.id AS reservation_id, r.name, r.date,
+                SELECT r.id AS reservation_id, r.date,
+                       m.id AS member_id, m.email AS member_email, m.password AS member_password, m.name AS member_name,
                        rt.id AS time_id, rt.start_at AS time_value,
                        th.id AS theme_id, th.name AS theme_name,
                        th.description AS theme_description, th.thumbnail AS theme_thumbnail
                 FROM reservation AS r
+                INNER JOIN member AS m ON r.member_id = m.id
                 INNER JOIN reservation_time AS rt ON r.time_id = rt.id
                 INNER JOIN themes AS th ON r.theme_id = th.id
                 """;
@@ -104,11 +129,13 @@ public class ReservationDao {
 
     public Optional<Reservation> findById(long id) {
         String sql = """
-                SELECT r.id AS reservation_id, r.name, r.date,
+                SELECT r.id AS reservation_id, r.date,
+                       m.id AS member_id, m.email AS member_email, m.password AS member_password, m.name AS member_name,
                        rt.id AS time_id, rt.start_at AS time_value,
                        th.id AS theme_id, th.name AS theme_name,
                        th.description AS theme_description, th.thumbnail AS theme_thumbnail
                 FROM reservation AS r
+                INNER JOIN member AS m ON r.member_id = m.id
                 INNER JOIN reservation_time AS rt ON r.time_id = rt.id
                 INNER JOIN themes AS th ON r.theme_id = th.id
                 WHERE r.id = ?
@@ -130,29 +157,14 @@ public class ReservationDao {
         return count != null && count > 0;
     }
 
-    public List<Reservation> findAllByName(String name) {
-        String sql = """
-                SELECT r.id AS reservation_id, r.name, r.date,
-                       rt.id AS time_id, rt.start_at AS time_value,
-                       th.id AS theme_id, th.name AS theme_name,
-                       th.description AS theme_description, th.thumbnail AS theme_thumbnail
-                FROM reservation AS r
-                INNER JOIN reservation_time AS rt ON r.time_id = rt.id
-                INNER JOIN themes AS th ON r.theme_id = th.id
-                WHERE r.name = ?
-                """;
-
-        return jdbcTemplate.query(sql, rowMapper, name);
-    }
-
-    public void updateDateTime(Long id, String name, LocalDate date, long timeId) {
+    public void updateDateTime(Long id, Long memberId, LocalDate date, long timeId) {
         String sql = """
                 UPDATE reservation
-                SET date = ?, time_id = ?
-                WHERE id = ? AND name = ?
+                SET member_id = ?, date = ?, time_id = ?
+                WHERE id = ?
                 """;
 
-        jdbcTemplate.update(sql, date, timeId, id, name);
+        jdbcTemplate.update(sql, memberId, date, timeId, id);
     }
 
     public boolean existsByThemeId(Long themeId) {
@@ -164,5 +176,22 @@ public class ReservationDao {
 
         Integer count = jdbcTemplate.queryForObject(sql, Integer.class, themeId);
         return count != null && count > 0;
+    }
+
+    public List<Reservation> findAllByMemberId(Long memberId) {
+        String sql = """
+                SELECT r.id AS reservation_id, r.date,
+                       m.id AS member_id, m.email AS member_email, m.password AS member_password, m.name AS member_name,
+                       rt.id AS time_id, rt.start_at AS time_value,
+                       th.id AS theme_id, th.name AS theme_name,
+                       th.description AS theme_description, th.thumbnail AS theme_thumbnail
+                FROM reservation AS r
+                INNER JOIN member AS m ON r.member_id = m.id
+                INNER JOIN reservation_time AS rt ON r.time_id = rt.id
+                INNER JOIN themes AS th ON r.theme_id = th.id
+                WHERE r.member_id = ?
+                """;
+
+        return jdbcTemplate.query(sql, rowMapper, memberId);
     }
 }

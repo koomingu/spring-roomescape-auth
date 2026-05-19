@@ -1,41 +1,35 @@
 package roomescape.reservation.controller;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import org.springframework.boot.autoconfigure.http.HttpMessageConverters;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import roomescape.auth.interceptor.LoginMember;
+import roomescape.member.domain.Member;
 import roomescape.reservation.domain.Reservation;
 import roomescape.reservation.dto.ReservationRequest;
 import roomescape.reservation.dto.ReservationResponse;
 import roomescape.reservation.dto.ReservationUpdateRequest;
 import roomescape.reservation.service.ReservationService;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/reservations")
 @Validated
 public class UserReservationController {
     private final ReservationService reservationService;
-    private final HttpMessageConverters messageConverters;
 
-    public UserReservationController(ReservationService reservationService, HttpMessageConverters messageConverters) {
+    public UserReservationController(ReservationService reservationService) {
         this.reservationService = reservationService;
-        this.messageConverters = messageConverters;
     }
 
     @GetMapping
     public ResponseEntity<List<ReservationResponse>> getReservations(
-            @RequestParam(required = true)
-            @NotBlank(message = "조회할 예약자 이름은 필수입니다.")
-            @Pattern(regexp = "^[^<>]*$", message = "올바르지 않은 이름 형식입니다.")
-            String name
+            @LoginMember Member member
     ) {
-        List<Reservation> reservations = reservationService.findAllByName(name);
+        List<Reservation> reservations = reservationService.findAllByMemberId(member.getId());
 
         List<ReservationResponse> response = reservations.stream()
                 .map(ReservationResponse::from)
@@ -46,9 +40,11 @@ public class UserReservationController {
 
     @PostMapping
     public ResponseEntity<ReservationResponse> createReservation(
+            @LoginMember Member member,
             @Valid @RequestBody ReservationRequest reservationRequest) {
+
         Reservation reservation = reservationService.save(
-                reservationRequest.name(),
+                member,
                 reservationRequest.date(),
                 reservationRequest.timeId(),
                 reservationRequest.themeId()
@@ -61,22 +57,21 @@ public class UserReservationController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteReservation(
             @PathVariable long id,
-            @RequestParam(required = true)
-            @NotBlank(message = "이름은 비어있을 수 없습니다.")
-            String name
+            @LoginMember Member member
     ) {
-        reservationService.deleteByUser(id, name);
+        reservationService.deleteByUser(id, member.getId());
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}")
     public ResponseEntity<ReservationResponse> updateReservation(
             @PathVariable long id,
-            @Valid @RequestBody ReservationUpdateRequest updateRequest){
+            @LoginMember Member member,
+            @Valid @RequestBody ReservationUpdateRequest updateRequest) {
 
         Reservation updateReservation = reservationService.updateReservationDateTimeByUser(
                 id,
-                updateRequest.name(),
+                member.getId(),
                 updateRequest.date(),
                 updateRequest.timeId()
         );
