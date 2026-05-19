@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>우테코 방탈출 예약 시스템</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+    <h1>🚪 우테코 방탈출</h1>
+</header>
+
+<main>
+    <!-- 예약 생성 섹션 -->
+    <section id="reservation-section" class="card">
+        <h2>새로운 예약하기</h2>
+        <form id="reservation-form">
+            <div class="form-group">
+                <label for="res-name">예약자 이름</label>
+                <input type="text" id="res-name" required placeholder="이름을 입력하세요">
+            </div>
+
+            <div class="form-group">
+                <label for="res-date">예약 날짜</label>
+                <input type="date" id="res-date" required>
+            </div>
+
+            <div class="form-group">
+                <label for="res-theme">테마 선택</label>
+                <select id="res-theme" required>
+                    <option value="">테마를 선택하세요</option>
+                    <!-- API로 테마 목록 동적 렌더링 -->
+                </select>
+            </div>
+
+            <button type="button" id="btn-check-schedule" class="btn btn-secondary">스케줄 조회</button>
+
+            <div id="schedule-container" class="hidden form-group" style="margin-top: 1.5rem;">
+                <label for="res-time">시간 선택</label>
+                <select id="res-time" required>
+                    <option value="">시간을 선택하세요</option>
+                </select>
+            </div>
+
+            <button type="submit" id="btn-submit-reservation" class="btn btn-primary hidden">예약하기</button>
+        </form>
+    </section>
+
+    <!-- 예약 조회 및 관리 섹션 -->
+    <section id="management-section" class="card">
+        <h2>내 예약 관리</h2>
+        <div class="form-group row">
+            <input type="text" id="search-name" placeholder="예약자 이름을 입력하세요">
+            <button type="button" id="btn-search" class="btn btn-primary">조회</button>
+        </div>
+
+        <div id="reservation-list" class="reservation-list">
+            <!-- 예약 목록이 여기에 표시됩니다 -->
+        </div>
+    </section>
+
+    <!-- 예약 수정 모달 (숨김 처리) -->
+    <div id="edit-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>예약 수정</h3>
+            <input type="hidden" id="edit-id">
+            <input type="hidden" id="edit-name">
+
+            <div class="form-group">
+                <label for="edit-date">변경할 날짜</label>
+                <input type="date" id="edit-date" required>
+            </div>
+
+            <div class="form-group">
+                <label for="edit-theme">테마 (변경불가, 스케줄 조회용)</label>
+                <input type="text" id="edit-theme-name" disabled>
+                <input type="hidden" id="edit-theme-id">
+            </div>
+
+            <button type="button" id="btn-edit-check-schedule" class="btn btn-secondary">변경할 스케줄 조회</button>
+
+            <div class="form-group hidden" id="edit-time-container">
+                <label for="edit-time">변경할 시간</label>
+                <select id="edit-time" required></select>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" id="btn-update-reservation" class="btn btn-primary hidden">수정 완료</button>
+                <button type="button" id="btn-close-modal" class="btn btn-danger">취소</button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
