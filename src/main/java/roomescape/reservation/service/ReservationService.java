@@ -105,8 +105,11 @@ public class ReservationService {
     }
 
     @Transactional
-    public void deleteByAdmin(long id) {
+    public void deleteByManager(long id, Member manager) {
         Reservation reservation = findById(id);
+
+        reservation.validateManager(manager);
+
         reservationRepository.delete(reservation.getId());
     }
 
