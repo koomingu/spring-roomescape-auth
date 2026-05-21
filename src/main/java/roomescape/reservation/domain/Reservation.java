@@ -56,6 +56,14 @@ public class Reservation {
         }
     }
 
+    public void validateManager(Member manager) {
+        Long reservationStoreId = theme.storeId();
+
+        if (!manager.isManagerOf(reservationStoreId)) {
+            throw new ForbiddenActionException("해당 매장의 예약만 제어할 수 있습니다.");
+        }
+    }
+
     private static void validateDateTime(LocalDate date, LocalTime time) {
         LocalDate today = LocalDate.now();
 
