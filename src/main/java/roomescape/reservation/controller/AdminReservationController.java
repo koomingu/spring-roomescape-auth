@@ -5,6 +5,8 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import roomescape.auth.config.LoginMember;
+import roomescape.member.domain.Member;
 import roomescape.reservation.domain.Reservation;
 import roomescape.reservation.dto.AdminReservationRequest;
 import roomescape.reservation.dto.ReservationResponse;
@@ -43,8 +45,11 @@ public class AdminReservationController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> forceDeleteReservation(@PathVariable long id) {
-        reservationService.deleteByAdmin(id);
+    public ResponseEntity<?> forceDeleteReservation(
+            @PathVariable long id,
+            @LoginMember Member manager
+    ) {
+        reservationService.deleteByManager(id, manager);
 
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
