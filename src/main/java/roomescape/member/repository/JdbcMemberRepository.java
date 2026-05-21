@@ -3,7 +3,7 @@ package roomescape.member.repository;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
@@ -11,6 +11,7 @@ import roomescape.member.domain.Member;
 
 import javax.sql.DataSource;
 import java.util.Optional;
+import roomescape.member.domain.Role;
 
 @Repository
 public class JdbcMemberRepository implements MemberRepository {
@@ -22,7 +23,9 @@ public class JdbcMemberRepository implements MemberRepository {
             rs.getLong("id"),
             rs.getString("email"),
             rs.getString("password"),
-            rs.getString("name")
+            rs.getString("name"),
+            Role.valueOf(rs.getString("role")),
+            rs.getObject("store_id") != null ? rs.getLong("store_id") : null
     );
 
     public JdbcMemberRepository(JdbcTemplate jdbcTemplate, DataSource dataSource) {
@@ -34,15 +37,22 @@ public class JdbcMemberRepository implements MemberRepository {
 
     @Override
     public Member save(Member member) {
-        SqlParameterSource params = new BeanPropertySqlParameterSource(member);
+        SqlParameterSource params = new MapSqlParameterSource()
+                .addValue("email", member.getEmail())
+                .addValue("password", member.getPassword())
+                .addValue("name", member.getName())
+                .addValue("role", member.getRole().name())
+                .addValue("store_id", member.getStoreId());
+
         Long id = simpleJdbcInsert.executeAndReturnKey(params).longValue();
-        return new Member(id, member.getEmail(), member.getPassword(), member.getName());
+        return new Member(id, member.getEmail(), member.getPassword(), member.getName(), member.getRole(),
+                member.getStoreId());
     }
 
     @Override
     public Optional<Member> findById(Long id) {
         String sql = """
-                SELECT id, email, password, name
+                SELECT id, email, password, name, role, store_id
                 FROM member
                 WHERE id = ?
                 """;
@@ -57,7 +67,7 @@ public class JdbcMemberRepository implements MemberRepository {
     @Override
     public Optional<Member> findByEmail(String email) {
         String sql = """
-                SELECT id, email, password, name
+                SELECT id, email, password, name, role, store_id
                 FROM member
                 WHERE email = ?
                 """;
