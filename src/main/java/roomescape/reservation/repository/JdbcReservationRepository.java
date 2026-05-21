@@ -16,23 +16,8 @@ public class JdbcReservationRepository implements ReservationRepository {
     }
 
     @Override
-    public List<Reservation> findAll() {
-        return reservationDao.findAll();
-    }
-
-    @Override
     public Reservation save(Reservation reservation) {
         return reservationDao.save(reservation);
-    }
-
-    @Override
-    public void delete(long id) {
-        reservationDao.delete(id);
-    }
-
-    @Override
-    public int countByTimeId(long timeId) {
-        return reservationDao.countByTimeId(timeId);
     }
 
     @Override
@@ -41,8 +26,8 @@ public class JdbcReservationRepository implements ReservationRepository {
     }
 
     @Override
-    public boolean existsByDateTimeAndTheme(LocalDate date, Long timeId, Long themeId) {
-        return reservationDao.existsByDateTimeAndTheme(date, timeId, themeId);
+    public List<Reservation> findAll() {
+        return reservationDao.findAll();
     }
 
     @Override
@@ -51,12 +36,32 @@ public class JdbcReservationRepository implements ReservationRepository {
     }
 
     @Override
-    public void updateDateTime(Long id, Long memberId, LocalDate date, long timeId) {
-        reservationDao.updateDateTime(id, memberId, date, timeId);
+    public List<Reservation> findAllByStoreId(Long storeId) {
+        return reservationDao.findAllByStoreId(storeId);
+    }
+
+    @Override
+    public boolean existsByDateTimeAndTheme(LocalDate date, Long timeId, Long themeId) {
+        return reservationDao.existsByDateTimeAndTheme(date, timeId, themeId);
     }
 
     @Override
     public boolean existsByThemeId(Long themeId) {
         return reservationDao.existsByThemeId(themeId);
+    }
+
+    @Override
+    public int countByTimeId(long timeId) {
+        return reservationDao.countByTimeId(timeId);
+    }
+
+    @Override
+    public void updateDateTime(Long id, Long memberId, LocalDate date, long timeId) {
+        reservationDao.updateDateTime(id, memberId, date, timeId);
+    }
+
+    @Override
+    public void delete(long id) {
+        reservationDao.delete(id);
     }
 }

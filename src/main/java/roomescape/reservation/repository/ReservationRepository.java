@@ -6,21 +6,23 @@ import java.util.Optional;
 import roomescape.reservation.domain.Reservation;
 
 public interface ReservationRepository {
-    List<Reservation> findAll();
-
     Reservation save(Reservation reservation);
-
-    void delete(long id);
-
-    int countByTimeId(long timeId);
 
     Optional<Reservation> findById(long id);
 
-    boolean existsByDateTimeAndTheme(LocalDate date, Long timeId, Long themeId);
+    List<Reservation> findAll();
 
     List<Reservation> findAllByMemberId(Long memberId);
 
-    void updateDateTime(Long id, Long memberId, LocalDate date, long timeId);
+    List<Reservation> findAllByStoreId(Long storeId);
+
+    boolean existsByDateTimeAndTheme(LocalDate date, Long timeId, Long themeId);
 
     boolean existsByThemeId(Long themeId);
+
+    int countByTimeId(long timeId);
+
+    void updateDateTime(Long id, Long memberId, LocalDate date, long timeId);
+
+    void delete(long id);
 }

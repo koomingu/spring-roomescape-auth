@@ -22,8 +22,10 @@ public class AdminReservationController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ReservationResponse>> getReservations() {
-        List<Reservation> reservations = reservationService.findAll();
+    public ResponseEntity<List<ReservationResponse>> getReservations(
+            @LoginMember Member manager
+    ) {
+        List<Reservation> reservations = reservationService.findAllByManager(manager);
         List<ReservationResponse> response = reservations.stream()
                 .map(ReservationResponse::from)
                 .toList();

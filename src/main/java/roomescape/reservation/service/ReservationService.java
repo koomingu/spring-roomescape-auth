@@ -5,6 +5,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import roomescape.exception.DuplicateException;
+import roomescape.exception.ForbiddenActionException;
 import roomescape.exception.NotFoundException;
 import roomescape.member.domain.Member;
 import roomescape.member.repository.MemberRepository;
@@ -36,17 +37,12 @@ public class ReservationService {
         this.memberRepository = memberRepository;
     }
 
-    public List<Reservation> findAll() {
-        return reservationRepository.findAll();
-    }
+    @Transactional
+    public Reservation save(Long memberId, LocalDate date, long timeId, long themeId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new NotFoundException("해당 회원을 찾을 수 없습니다. id: " + memberId));
 
-    public Reservation findById(long id) {
-        return reservationRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("해당 예약을 찾을 수 없습니다. id: " + id));
-    }
-
-    public List<Reservation> findAllByMemberId(Long memberId) {
-        return reservationRepository.findAllByMemberId(memberId);
+        return save(member, date, timeId, themeId);
     }
 
     @Transactional
@@ -66,12 +62,25 @@ public class ReservationService {
         }
     }
 
-    @Transactional
-    public Reservation save(Long memberId, LocalDate date, long timeId, long themeId) {
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new NotFoundException("해당 회원을 찾을 수 없습니다. id: " + memberId));
+    public Reservation findById(long id) {
+        return reservationRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("해당 예약을 찾을 수 없습니다. id: " + id));
+    }
 
-        return save(member, date, timeId, themeId);
+    public List<Reservation> findAll() {
+        return reservationRepository.findAll();
+    }
+
+    public List<Reservation> findAllByMemberId(Long memberId) {
+        return reservationRepository.findAllByMemberId(memberId);
+    }
+
+    public List<Reservation> findAllByManager(Member manager) {
+        if (!manager.isManager()) {
+            throw new ForbiddenActionException("매장 매니저 권한이 필요합니다.");
+        }
+
+        return reservationRepository.findAllByStoreId(manager.getStoreId());
     }
 
     @Transactional
