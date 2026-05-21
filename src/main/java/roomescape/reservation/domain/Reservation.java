@@ -21,8 +21,6 @@ public class Reservation {
     }
 
     public Reservation(Long id, Member member, LocalDate date, ReservationTime time, Theme theme) {
-        validateReservationDateTime(date, time.startAt());
-
         this.id = id;
         this.member = member;
         this.date = date;
@@ -30,11 +28,17 @@ public class Reservation {
         this.theme = theme;
     }
 
+    public static Reservation createNewReservation(Member member, LocalDate date, ReservationTime time, Theme theme) {
+        validateDateTime(date, time.startAt());
+
+        return new Reservation(null, member, date, time, theme);
+    }
+
     public void validateUpdateDateTime(LocalDate newDate, LocalTime newTime) {
         if (newDate == null || newTime == null) {
             throw new BadRequestException("변경할 날짜와 시간 정보가 필요합니다.");
         }
-        validateReservationDateTime(newDate, newTime);
+        validateDateTime(newDate, newTime);
     }
 
     public void validateOwner(Long memberId) {
@@ -52,7 +56,7 @@ public class Reservation {
         }
     }
 
-    private void validateReservationDateTime(LocalDate date, LocalTime time) {
+    private static void validateDateTime(LocalDate date, LocalTime time) {
         LocalDate today = LocalDate.now();
 
         if (date.isBefore(today)) {
