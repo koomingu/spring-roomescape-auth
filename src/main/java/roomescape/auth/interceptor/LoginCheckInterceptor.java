@@ -49,8 +49,10 @@ public class LoginCheckInterceptor implements HandlerInterceptor {
             throw new UnauthorizedException("로그인이 필요한 서비스입니다.");
         }
 
-        Object sessionMember = session.getAttribute(AuthController.SESSION_KEY);
-        request.setAttribute(LOGIN_MEMBER_REQUEST_KEY, sessionMember);
+        Long memberIdFromSession = (Long) session.getAttribute(AuthController.SESSION_KEY);
+        Member member = memberRepository.findById(memberIdFromSession)
+                .orElseThrow(() -> new UnauthorizedException("존재하지 않는 회원입니다."));
+        request.setAttribute(LOGIN_MEMBER_REQUEST_KEY, member);
 
         return true;
     }
