@@ -7,20 +7,32 @@ public class Member {
     private final String email;
     private final String password;
     private final String name;
+    private final Role role;
+    private final Long storeId;
 
-    public Member(Long id, String email, String password, String name) {
+    public Member(Long id, String email, String password, String name, Role role, Long storeId) {
         this.id = id;
         this.email = email;
         this.password = password;
         this.name = name;
+        this.role = role != null ? role : Role.USER;
+        this.storeId = storeId;
     }
 
     public Member(String email, String password, String name) {
-        this(null, email, password, name);
+        this(null, email, password, name, Role.USER, null);
     }
 
     public boolean checkPassword(String password) {
         return this.password.equals(password);
+    }
+
+    public boolean isManagerOf(Long targetStoreId) {
+        return this.role == Role.MANAGER && Objects.equals(this.storeId, targetStoreId);
+    }
+
+    public boolean isManager() {
+        return this.role == Role.MANAGER;
     }
 
     public Long getId() {
@@ -37,6 +49,14 @@ public class Member {
 
     public String getName() {
         return name;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public Long getStoreId() {
+        return storeId;
     }
 
     @Override
