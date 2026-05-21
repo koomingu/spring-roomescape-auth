@@ -1,4 +1,4 @@
-package roomescape.auth.interceptor;
+package roomescape.auth.config;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.MethodParameter;
