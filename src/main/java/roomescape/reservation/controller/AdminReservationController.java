@@ -35,8 +35,11 @@ public class AdminReservationController {
 
     @PostMapping
     public ResponseEntity<ReservationResponse> createForceReservation(
-            @Valid @RequestBody AdminReservationRequest adminReservationRequest) {
-        Reservation reservation = reservationService.save(
+            @Valid @RequestBody AdminReservationRequest adminReservationRequest,
+            @LoginMember Member manager
+    ) {
+        Reservation reservation = reservationService.saveByManager(
+                manager,
                 adminReservationRequest.memberId(),
                 adminReservationRequest.date(),
                 adminReservationRequest.timeId(),

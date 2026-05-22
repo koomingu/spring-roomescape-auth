@@ -62,6 +62,30 @@ public class ReservationService {
         }
     }
 
+    @Transactional
+    public Reservation saveByManager(Member manager, Long memberId, LocalDate date, long timeId, long themeId) {
+        Member targetMember = memberRepository.findById(memberId)
+                .orElseThrow(() -> new NotFoundException("해당 회원을 찾을 수 없습니다. id: " + memberId));
+
+        Theme theme = themeRepository.findById(themeId)
+                .orElseThrow(() -> new NotFoundException("해당 테마를 찾을 수 없습니다."));
+
+        if (!manager.isManagerOf(theme.storeId())) {
+            throw new ForbiddenActionException("본인 매장의 테마만 예약을 생성할 수 있습니다.");
+        }
+
+        ReservationTime time = reservationTimeRepository.findById(timeId)
+                .orElseThrow(() -> new NotFoundException("예약 시간을 찾을 수 없습니다."));
+
+        validateDuplicateReservation(date, timeId, themeId);
+
+        try {
+            return reservationRepository.save(new Reservation(targetMember, date, time, theme));
+        } catch (DuplicateKeyException e) {
+            throw new DuplicateException("해당 날짜와 시간은 이미 예약되어 있습니다.");
+        }
+    }
+
     public Reservation findById(long id) {
         return reservationRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("해당 예약을 찾을 수 없습니다. id: " + id));
